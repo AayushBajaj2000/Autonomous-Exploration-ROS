@@ -12,6 +12,7 @@ float x = 0;
 float y = 0;
 int count = 0;
 
+// Send the action to the move_base node to move the robot to the start
 void moveToGoal(float x, float y){
   //tell the action client that we want to spin a thread by default
   MoveBaseClient ac("move_base", true);
@@ -23,7 +24,7 @@ void moveToGoal(float x, float y){
 
   move_base_msgs::MoveBaseGoal goal;
 
-  //we'll send a goal to the robot to move 1 meter forward
+  //Set the goal to be the initial position of the robot
   goal.target_pose.header.frame_id = "map";
   goal.target_pose.header.stamp = ros::Time::now();
 
@@ -31,21 +32,25 @@ void moveToGoal(float x, float y){
   goal.target_pose.pose.position.y = y;
   goal.target_pose.pose.orientation.w = 1.0;
 
+  // Send the goal
   ROS_INFO("Sending goal");
   ac.sendGoal(goal);
 
+  // Wait forr the results
   ac.waitForResult();
 
   if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-    ROS_INFO("Hooray, the base moved 1 meter forward");
+    ROS_INFO("Hooray, auto exploration is done!!!");
   else
-    ROS_INFO("The base failed to move forward 1 meter for some reason");
+    ROS_INFO("The robot could not move back to the start!!");
 }
 
+// Function which moves the robot to the start
 void moveToStart(const std_msgs::String::ConstPtr& msg)
 {
+  // Just do it once in case we receiver multiple messages (usually we get 2)
   if(count == 0){
-   std::cout<<"Im here"<<std::endl;
+   std::cout<<"Going back to the Start!!"<<std::endl;
    moveToGoal(x,y);
    count++;
   }
@@ -53,10 +58,13 @@ void moveToStart(const std_msgs::String::ConstPtr& msg)
 
 int main(int argc, char **argv)
 {
+  // initializing the listener node
   ros::init(argc, argv, "odom_listener");
-  // Getting the initial Coordinates of the robot
+  
+  // Getting the initial Coordinates of the robot from odom topic
   nav_msgs::Odometry::ConstPtr msg = ros::topic::waitForMessage<nav_msgs::Odometry>("/odom");
-  // If we received a message then print it
+  
+  // If we received a message then print it and save the coordinates
   if (msg) {
       x = msg->pose.pose.position.x;
       y = msg->pose.pose.position.y;
@@ -66,6 +74,7 @@ int main(int argc, char **argv)
   else std::cout<<"No message!"<<std::endl;
 
   ros::NodeHandle n;
+  // Subscibe to the goalReached topic which tells us when the exploration is done.
   ros::Subscriber sub = n.subscribe("goalReached", 10, moveToStart);
 
   ros::spin();
