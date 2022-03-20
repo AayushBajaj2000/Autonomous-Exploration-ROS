@@ -30,7 +30,7 @@ void moveToGoal(float x, float y){
 
   goal.target_pose.pose.position.x = x;
   goal.target_pose.pose.position.y = y;
-  goal.target_pose.pose.orientation.w = 1.0;
+  goal.target_pose.pose.orientation.w = 1;
 
   // Send the goal
   ROS_INFO("Sending goal");
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
   ros::NodeHandle n;
   // Subscibe to the goalReached topic which tells us when the exploration is done.
-  ros::Subscriber sub = n.subscribe("goalReached", 10, moveToStart);
+  ros::Subscriber sub = n.subscribe("goalReached", 1 , moveToStart);
 
   ros::spin();
 }
